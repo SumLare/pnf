@@ -16,14 +16,15 @@ def eliminate_equivalence(formula):
     return " & ".join([left_literal, right_literal])
 
 def eliminate_implication(formula):
-    statements_in_params = re.findall("\((.*?)\)", formula)
-    if "->" in statements_in_params:statements = formula.split("->")
-    for statement in statements_in_params:
-        if "->" in statement:
-            statements = statement.split("->")
-            statements[0] = "~" + statements[:2][0].strip()
-        else
-            statements = formula.split("->")
+    #statements_in_params = re.findall("\((.*?)\)", formula)
+    #for statement in statements_in_params:
+    #    if "->" in statement:
+    #        statements = statement.split("->")
+    #        statements[0] = "~" + statements[:2][0].strip()
+    #        formula = " |".join(statements[:2])
+
+    statements = formula.split("->")
+    statements[0] = "~" + statements[:2][0].strip()
     return " |".join(statements[:2])
 
 def inward_negation(formula):
@@ -57,11 +58,37 @@ def standardize(formula):
         else:
             return formula[:q_index+1] + new_var + formula[q_index+2] + new_var + formula[q_index+4:]
 
+def quantifier_indexes(formula):
+    pattern = re.compile("∀|∃")
+    return [q.start(0) for q in pattern.finditer(formula)]
+
+def move_quantifiers_in_front(formula):
+    q_array = []
+    i = 0
+    for q in quantifier_indexes(formula):
+        end_of_q = q + 2
+        q_array.append(formula[q:end_of_q])
+        if 'modified_formula' in locals():
+            modified_formula = modified_formula[:q-i] + modified_formula[end_of_q-i:]
+        else:
+            modified_formula = formula[i:q] + formula[end_of_q:]
+        i+= 2
+    return "".join(q_array) + "(" + modified_formula + ")"
+
+def eliminate_same_quantifiers(formula):
+    end_of_quantifiers = formula.index("(")
+    quantifiers = formula[:end_of_quantifiers]
+    quantifiers_array = re.findall('..?', quantifiers)
+    unique_quantifiers = list(set(quantifiers_array))
+    return "".join(unique_quantifiers) + formula[end_of_quantifiers:]
+
 def parse(formula):
     if "<->" in formula: formula = eliminate_equivalence(formula)
     if "->" in formula: formula = eliminate_implication(formula)
     if "~" in formula: formula = inward_negation(formula)
     formula = standardize(formula)
+    formula = move_quantifiers_in_front(formula)
+    formula = eliminate_same_quantifiers(formula)
     return print(formula)
 
 if __name__ == '__main__':
