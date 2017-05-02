@@ -16,16 +16,20 @@ def eliminate_equivalence(formula):
     return " & ".join([left_literal, right_literal])
 
 def eliminate_implication(formula):
-    #statements_in_params = re.findall("\((.*?)\)", formula)
-    #for statement in statements_in_params:
-    #    if "->" in statement:
-    #        statements = statement.split("->")
-    #        statements[0] = "~" + statements[:2][0].strip()
-    #        formula = " |".join(statements[:2])
-
-    statements = formula.split("->")
-    statements[0] = "~" + statements[:2][0].strip()
-    return " |".join(statements[:2])
+    statements_in_params = re.findall("\((.*?)\)", formula)
+    for statement in statements_in_params:
+        if "->" in statement:
+            start_index = formula.find(statement)
+            end_index = re.search(statement, formula).end()
+            statements = statement.split("->")
+            statements[0] = "~" + statements[:2][0].strip()
+            formula = formula[:start_index] + " |".join(statements[:2]) + formula[end_index:]
+    if not statements_in_params:
+        statements = formula.split("->")
+        statements[0] = "~" + statements[:2][0].strip()
+        return " |".join(statements[:2])
+    else:
+        return formula
 
 def inward_negation(formula):
     if formula.find("~∃") is not -1: raise SyntaxError("Use parentheses with quantifiers")
